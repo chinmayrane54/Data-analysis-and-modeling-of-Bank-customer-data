@@ -26,3 +26,4 @@ methods-> Data analysis using TABLEAU, Data modeling using R, Matlab
 File names
 Visualization.docx contains the graphical visualization analysis.
 Main contains the modeling code
+Churn_Modeling.xlsx
