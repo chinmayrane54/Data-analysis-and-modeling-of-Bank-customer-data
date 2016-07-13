@@ -25,5 +25,9 @@ methods-> Data analysis using TABLEAU, Data modeling using R, Matlab
 
 File names
 Visualization.docx contains the graphical visualization analysis.
-Main contains the modeling code
-Churn_Modeling.xlsx
+the training data file is converted from .xlsx to csv
+
+Modelling contains the model for predicting the future possibility of customers leaving the bank 
+Two methods are explained one below the other with confusion matrix with 1 or 0 for exit or not exit
+method 1 - Random forest with k-fold Validation 
+method 2 - Logistic regression with normal Validation
