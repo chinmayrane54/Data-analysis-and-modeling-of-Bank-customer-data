@@ -1,0 +1,178 @@
+#Random forest with K fold validation #reference of K-fold taken from Mr BHoung starter code
+
+library(plyr)
+library(randomForest)
+
+getwd()
+setwd("C:\\Users\\Chinmay\\Desktop\\VisualizationforGITHUB")
+ChurnData <- read.csv("Churn_Modelling.csv")
+colnames(ChurnData)
+ChurnData <- ChurnData[,c(-1,-2,-3)]
+
+
+#for k fold validation total number for data features
+k = 11 
+ChurnData$id <- sample(1:k, nrow(ChurnData), replace = TRUE)
+
+list <- 1:k
+
+pred <- data.frame()
+testsetCopy <- data.frame()
+progress.bar <- create_progress_bar("text")
+progress.bar$init(k)
+for (i in 1:k){
+  # remove rows with id i from dataframe to create training set and test set
+  
+  trainingset <- subset(ChurnData, id %in% list[-i])
+  testset <- subset(ChurnData, id %in% c(i))
+  
+  # run a random forest model
+  mymodel <- randomForest(trainingset$Exited ~ ., data = trainingset, ntree = 100)
+  
+  # removing the output column
+  temp <- as.data.frame(predict(mymodel, testset[,-11]))
+  # appending the whole of 10000 patterns for predicting at the end
+  pred <- rbind(pred, temp)
+  
+  # append this iteration's test set to the test set copy data frame
+  
+  testsetCopy <- rbind(testsetCopy, as.data.frame(testset[,11]))
+  
+  progress.bar$step()
+}
+
+# add predictions and actual Sepal Length values
+result <- cbind(pred, testsetCopy)
+names(result) <- c("Predicted", "Actual")
+result$ExitedFinal <- ifelse(result$Predicted > 0.5,1,0) #range for selecting 1,0 as our prediction output is in binary form
+result$Difference <- abs(result$Actual - result$Predicted)
+
+accuracy <-mean(result$Actual == result$ExitedFinal) * 100
+accuracy   #detemines the accuracy of the model
+# As an example use Mean Absolute Error as Evalution 
+summary(result$Difference)
+confusionMatrix(result$ExitedFinal,result$Actual)
+
+#Confusion Matrix and Statistics
+
+#          Reference
+#Prediction    0    1
+#         0 7706 1101
+#         1  257  936
+                                          
+#               Accuracy : 0.8642          
+#                 95% CI : (0.8573, 0.8709)
+#    No Information Rate : 0.7963          
+#    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+#                  Kappa : 0.5051          
+# Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+#            Sensitivity : 0.9677          
+#            Specificity : 0.4595          
+#         Pos Pred Value : 0.8750          
+#         Neg Pred Value : 0.7846          
+#             Prevalence : 0.7963          
+#         Detection Rate : 0.7706          
+#   Detection Prevalence : 0.8807          
+#      Balanced Accuracy : 0.7136          
+                                          
+#       'Positive' Class : 0               
+
+
+
+
+
+######################################################logistic regression technique with normal validation############################
+getwd()
+ setwd("C:\\Users\\Chinmay\\Desktop\\VisualizationforGITHUB")
+ ChurnData <- read.csv("Churn_Modelling.csv")
+ #ChurnData <- read.xlsx("Churn-Modelling.xlsx", "Churn Modelling")
+ colnames(ChurnData)
+ChurnData <- ChurnData[,c(-1,-2,-3,-11,-13)] #checked using chi squared and removed
+
+
+colnames(ChurnData)
+
+
+
+#Adding extra polynomial features to increase the accuracy 
+ChurnData <- transform(ChurnData, CreditScoreDoub = CreditScore^2, AgeDoub = Age^2,Agetrip = Age^3,CreditScoreTrip = CreditScore^3)
+head(ChurnData)
+#, Agef = Age^4,CreditScoref = CreditScore^4 # removed because the training error was becoming less
+head(ChurnData)
+
+#ChurnData <- ChurnData[,c(-11,-13)]
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(ChurnData))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(ChurnData)), size = smp_size)
+
+train <- ChurnData[train_ind, ]
+test <- ChurnData[-train_ind, ]
+ 
+#train_input <- train[,c(1:10)]
+train_out <- train[,11]
+
+
+model <- glm(Exited ~.,family=binomial(link='logit'),data=train)
+
+summary(model)
+anova(model, test="Chisq") #for chi-squared test- a method of ascessing the goodness of the fit
+colnames(test)
+#Analysis for deviance table
+predtrain <- predict(model,train[,-9])
+
+ExitedTrain <- ifelse(predtrain > 0.5,1,0)
+
+
+predstest <- predict(model,test[,-9])
+
+ExitedFinal <- ifelse(preds1 > 0.5,1,0)
+#############################################
+#rf = randomForest(Exited~.,data=train)
+#colnames(test)
+#predict test, use type=prob to extract vote fractions
+#preds = predict(rf,test[,-11]) 
+
+#ExitedFinal <- ifelse(preds > 0.5,1,0)
+
+# 86.24% 0.6
+# 86.48  0.5
+accuracytrain <-mean(ExitedTrain == train$Exited) * 100
+accuracytrain # to check the tranining error for adding extra features or no
+accuracytest <-mean(ExitedFinal == test$Exited) * 100
+accuracytest  # to check the testing error for adding extra features or no
+require(caret)
+
+confusionMatrix(ExitedFinal,test$Exited)
+
+> confusionMatrix(ExitedFinal,test$Exited)
+#Confusion Matrix and Statistics
+
+ #         Reference
+#Prediction    0    1
+#         0 1957  411
+#         1   24  108
+                                          
+#               Accuracy : 0.826           
+#                 95% CI : (0.8106, 0.8407)
+#    No Information Rate : 0.7924          
+#    P-Value [Acc > NIR] : 1.329e-05       
+                                          
+#                  Kappa : 0.2704          
+# Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+#           Sensitivity : 0.9879          
+#            Specificity : 0.2081          
+#         Pos Pred Value : 0.8264          
+#         Neg Pred Value : 0.8182          
+#             Prevalence : 0.7924          
+#         Detection Rate : 0.7828          
+#   Detection Prevalence : 0.9472          
+#      Balanced Accuracy : 0.5980          
+                                          
+#       'Positive' Class : 0            
