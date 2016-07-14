@@ -10,6 +10,35 @@ colnames(ChurnData)
 ChurnData <- ChurnData[,c(-1,-2,-3)]
 
 
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(ChurnData))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(ChurnData)), size = smp_size)
+
+train <- ChurnData[train_ind, ]
+test <- ChurnData[-train_ind, ]
+
+
+model <- randomForest(as.factor(train$Exited) ~ ., data = train, ntree = 200)
+train_pred <- predict(model, train[,-11], type="prob")[,2]
+test_pred <- predict(model, test[,-11], type="prob")[,2]
+
+ExitedTrain <- ifelse(train_pred > 0.5,1,0)
+accuracytest <-mean(ExitedTrain == train$Exited) * 100
+accuracytest
+
+ExitedTest <- ifelse(test_pred > 0.5,1,0)
+accuracytest <-mean(ExitedTest == test$Exited) * 100
+accuracytest
+
+# checking for the R squared
+Rsquared <-1 - sum((train$Exited- ExitedTrain)^2)/sum((train$Exited-mean(train$Exited))^2)
+Rsquared
+
+##########################################################
+
 #for k fold validation total number for data features
 k = 11 
 ChurnData$id <- sample(1:k, nrow(ChurnData), replace = TRUE)
@@ -133,15 +162,6 @@ predstest <- predict(model,test[,-9])
 
 ExitedFinal <- ifelse(preds1 > 0.5,1,0)
 #############################################
-#rf = randomForest(Exited~.,data=train)
-#colnames(test)
-#predict test, use type=prob to extract vote fractions
-#preds = predict(rf,test[,-11]) 
-
-#ExitedFinal <- ifelse(preds > 0.5,1,0)
-
-# 86.24% 0.6
-# 86.48  0.5
 accuracytrain <-mean(ExitedTrain == train$Exited) * 100
 accuracytrain # to check the tranining error for adding extra features or no
 accuracytest <-mean(ExitedFinal == test$Exited) * 100
